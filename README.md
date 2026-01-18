@@ -50,7 +50,7 @@ XStore Backend là REST API server được xây dựng với Spring Boot, cung 
 - **Google API Client** - Google OAuth integration
 - **OpenPDF** - PDF generation
 - **JavaMail** - Email service
-- **JJWT** - JWT token processing
+- **JWT** - JWT token processing
 
 ### DevOps
 - **Docker** - Containerization
@@ -73,43 +73,45 @@ git clone <repository-url>
 cd XStore_backend
 ```
 
-### 2. Cài đặt Database
-
-**MariaDB (Local Development):**
-
-```sql
-CREATE DATABASE xstoredb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 3. Cấu hình môi trường
+### 2. Cấu hình môi trường
 
 Tạo file `.env` trong thư mục root:
 
 ```properties
-# Database
-DB_URL=jdbc:mariadb://localhost:3306/xstoredb
-DB_USERNAME=root
-DB_PASSWORD=your_password
+#Spring
+APP_PORT=8080
+#Database
+DB_URL=jdbc:mariadb://localhost:3306/xstoredb?createDatabaseIfNotExist=true
+DB_PASSWORD=YOUR_PASSWORD
 
-# JWT Secret
-JWT_SECRET=your-secret-key-here-minimum-256-bits
+#Mail
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=tranthanhtai1928@gmail.com
+MAIL_PASSWORD=djngyzqgyzygwwkd
 
-# Google OAuth
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
+#JWT
+JWT_KEY=982759fe9032c9794bacef867d65dc1084b29c6685176f77ee9d7765d0a1ad3d
 
-# Email (Gmail)
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
+#Google
+GOOGLE_CLIENT_ID=20028934029-urn06qotve6ot72vc537v1voujlm2h9g.apps.googleusercontent.com
 
-# VNPay
-VNPAY_TMN_CODE=your-vnpay-code
-VNPAY_HASH_SECRET=your-vnpay-secret
-VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-VNPAY_RETURN_URL=http://localhost:3000/payment/return
+#Gemini
+SECRET_KEY=982759fe9032c9794bacef867d65dc1084b29c6685176f77ee9d7765d0a1ad3d
+GEMINI_API_KEY=AIzaSyAeujUb1bJLH_j1RQV_xDPUjUJIpUtHyOI
+
+#vn pay
+VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+VNP_RETURN_URL=http://localhost:5173/payment-return
+VNP_IPN_URL=https://uninsidious-toothlike-karl.ngrok-free.dev/api/payment/ipn
+VNP_TMN_CODE=DJ4JK2A0
+VNP_HASH_SECRET=D6JWBE6AWGZZPJZ1UUD4WKV9N0V65KZ8
+VNP_VERSION=2.1.0
+VNP_COMMAND=pay
+VNP_ORDER_TYPE=orther
 ```
 
-### 4. Build và chạy
+### 3. Build và chạy
 
 **Sử dụng Maven Wrapper (khuyến nghị):**
 
@@ -131,46 +133,11 @@ VNPAY_RETURN_URL=http://localhost:3000/payment/return
 java -jar target/X-Store-0.0.1-SNAPSHOT.war
 ```
 
-### 5. Kiểm tra server
+### 4. Kiểm tra server
 
 Server chạy tại: `http://localhost:8080`
 
 Test endpoint: `http://localhost:8080/api/products/test`
-
-## Cấu hình
-
-### application.properties
-
-Các cấu hình quan trọng trong `src/main/resources/application.properties`:
-
-```properties
-# Server
-server.port=8080
-
-# Database - Local
-spring.datasource.url=jdbc:mariadb://localhost:3306/xstoredb?createDatabaseIfNotExist=true
-spring.datasource.username=root
-spring.datasource.password=root
-
-# JPA/Hibernate
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-
-# Data initialization
-spring.sql.init.mode=never
-spring.sql.init.data-locations=classpath:data.sql
-
-# File upload
-spring.servlet.multipart.max-file-size=10MB
-spring.servlet.multipart.max-request-size=10MB
-
-# Logging
-logging.file.name=logs/logs.txt
-```
-
-### Data Initialization
-
-File `data.sql` chỉ chạy **1 lần** khi database trống (được kiểm soát bởi `DataInitializer.java`).
 
 ## API Endpoints
 
@@ -469,7 +436,7 @@ docker run -p 8080:8080 \
 - [ ] Update CORS allowed origins
 - [ ] Secure all sensitive endpoints
 
-## 🔒 Security
+## Security
 
 ### Best Practices
 - JWT tokens với expiration time

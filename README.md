@@ -69,7 +69,7 @@ XStore Backend là REST API server được xây dựng với Spring Boot, cung 
 ### 1. Clone repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/tai3804/XStore_backend
 cd XStore_backend
 ```
 

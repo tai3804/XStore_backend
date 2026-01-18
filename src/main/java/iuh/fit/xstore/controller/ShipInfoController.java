@@ -25,7 +25,7 @@ public class ShipInfoController {
      */
     @GetMapping("/user/{userId}")
     public ApiResponse<List<ShipInfoResponse>> getUserShipInfos(@PathVariable("userId") int userId) {
-        log.info("📦 Getting ship infos for user: {}", userId);
+        log.info("Getting ship infos for user: {}", userId);
         List<ShipInfo> shipInfos = shipInfoService.findByUserId(userId);
         List<ShipInfoResponse> responses = shipInfos.stream()
                 .map(this::convertToResponse)
@@ -38,7 +38,7 @@ public class ShipInfoController {
      */
     @GetMapping("/user/{userId}/default")
     public ApiResponse<ShipInfoResponse> getDefaultShipInfo(@PathVariable("userId") int userId) {
-        log.info("📦 Getting default ship info for user: {}", userId);
+        log.info("Getting default ship info for user: {}", userId);
         ShipInfo shipInfo = shipInfoService.findDefaultByUserId(userId);
         ShipInfoResponse response = shipInfo != null ? convertToResponse(shipInfo) : null;
         return new ApiResponse<>(SuccessCode.FETCH_SUCCESS.getCode(), "Fetch default ship info successfully", response);
@@ -73,7 +73,7 @@ public class ShipInfoController {
     public ApiResponse<ShipInfoResponse> createShipInfo(
             @RequestBody ShipInfoRequest request,
             @RequestParam("userId") int userId) {
-        log.info("📦 Creating new ship info for user: {}", userId);
+        log.info("Creating new ship info for user: {}", userId);
         ShipInfo shipInfo = ShipInfo.builder()
                 .recipientName(request.getRecipientName())
                 .recipientPhone(request.getRecipientPhone())

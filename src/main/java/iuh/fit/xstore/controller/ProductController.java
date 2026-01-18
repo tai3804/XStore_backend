@@ -11,6 +11,7 @@ import iuh.fit.xstore.model.ProductType;
 import iuh.fit.xstore.service.ProductService;
 import iuh.fit.xstore.service.ProductTypeService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/products")
 @AllArgsConstructor
@@ -31,11 +33,11 @@ public class ProductController {
     private final ProductTypeService productTypeService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // 📁 Thư mục lưu ảnh
+    // Thu muc luu anh
     private static final String UPLOAD_DIR = "uploads/products/";
 
     /**
-     * ✅ Lưu file ảnh lên server
+     * Luu file anh len server
      */
     private String saveProductImage(MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) {
@@ -65,9 +67,9 @@ public class ProductController {
     }
 
     /**
-     * ✅ Tạo sản phẩm mới với file ảnh (multipart/form-data)
+     * Tao san pham moi voi file anh (multipart/form-data)
      * POST /api/products/upload
-     * NOTE: ProductInfo (colors, sizes, quantities) sẽ được quản lý riêng qua ProductInfoController
+     * NOTE: ProductInfo (colors, sizes, quantities) se duoc quan ly rieng qua ProductInfoController
      */
     @PostMapping("/upload")
     public ApiResponse<Product> createProductWithImage(
@@ -80,21 +82,16 @@ public class ProductController {
             @RequestParam("typeId") int typeId,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) throws Exception {
-        System.out.println("📥 [CREATE MULTIPART] Received product data:");
-        System.out.println("   Name: " + name);
-        System.out.println("   Brand: " + brand);
-        System.out.println("   Price: " + price);
-        System.out.println("   TypeId: " + typeId);
-        System.out.println("   Image file: " + (image != null ? image.getOriginalFilename() : "null"));
+        log.info("Nhan du lieu san pham: name={}, brand={}, price={}, typeId={}", name, brand, price, typeId);
 
-        // 💾 Lưu ảnh nếu có
+        // Luu anh neu co
         String imagePath = null;
         if (image != null && !image.isEmpty()) {
             imagePath = saveProductImage(image);
-            System.out.println("✅ Image saved: " + imagePath);
+            log.info("Anh san pham duoc luu: {}", imagePath);
         }
 
-        // ✅ Chuyển DTO thành Product entity
+        // Chuyen DTO thanh Product entity
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
@@ -104,22 +101,23 @@ public class ProductController {
         product.setPrice(price);
         product.setPriceInStock(priceInStock);
 
-        // ✅ Lấy ProductType từ ID
+        // Lay ProductType tu ID
         if (typeId > 0) {
             ProductType type = productTypeService.findById(typeId);
             product.setType(type);
         }
 
-        // ProductInfo (colors, sizes, quantities) sẽ được thêm sau qua ProductInfoController
+        // ProductInfo (colors, sizes, quantities) se duoc them sau qua ProductInfoController
+        log.info("Tao san pham voi name: {}", name);
         Product createdProduct = productService.createProduct(product);
-        System.out.println("✅ Product created successfully: ID " + createdProduct.getId());
+        log.info("Tao san pham thanh cong, ID: {}", createdProduct.getId());
         return new ApiResponse<>(SuccessCode.PRODUCT_CREATED, createdProduct);
     }
 
     /**
-     * ✅ Cập nhật sản phẩm với file ảnh mới (multipart/form-data)
+     * Cap nhat san pham voi file anh moi (multipart/form-data)
      * PUT /api/products/{id}/upload
-     * NOTE: ProductInfo (colors, sizes, quantities) sẽ được quản lý riêng qua ProductInfoController
+     * NOTE: ProductInfo (colors, sizes, quantities) se duoc quan ly rieng qua ProductInfoController
      */
     @PutMapping("/{id}/upload")
     public ApiResponse<Product> updateProductWithImage(
@@ -133,11 +131,9 @@ public class ProductController {
             @RequestParam("typeId") int typeId,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) throws Exception {
-        System.out.println("📥 [UPDATE MULTIPART] Updating product ID: " + id);
-        System.out.println("   Name: " + name);
-        System.out.println("   Image file: " + (image != null ? image.getOriginalFilename() : "null"));
+        log.info("Cap nhat san pham ID: {}, name: {}", id, name);
 
-        // ✅ Chuyển DTO thành Product entity
+        // Chuyen DTO thanh Product entity
         Product product = new Product();
         product.setId(id);
         product.setName(name);
@@ -147,33 +143,36 @@ public class ProductController {
         product.setPrice(price);
         product.setPriceInStock(priceInStock);
 
-        // 💾 Xử lý ảnh: nếu có file mới, lưu file mới; nếu không, giữ ảnh cũ
+        // Xu ly anh: neu co file moi, luu file moi; neu khong, giu anh cu
         if (image != null && !image.isEmpty()) {
             String newImagePath = saveProductImage(image);
             product.setImage(newImagePath);
-            System.out.println("✅ New image saved: " + newImagePath);
+            log.info("Anh san pham moi duoc luu: {}", newImagePath);
         } else {
-            // Giữ ảnh cũ: fetch product cũ từ DB
+            // Giu anh cu: fetch product cu tu DB
             Product existingProduct = productService.findById(id);
             product.setImage(existingProduct.getImage());
-            System.out.println("ℹ️ Keeping old image: " + existingProduct.getImage());
+            log.info("Giu anh cu cua san pham");
         }
 
-        // ✅ Lấy ProductType từ ID
+        // Lay ProductType tu ID
         if (typeId > 0) {
             ProductType type = productTypeService.findById(typeId);
             product.setType(type);
         }
 
-        // ProductInfo (colors, sizes, quantities) sẽ được cập nhật riêng qua ProductInfoController
+        // ProductInfo (colors, sizes, quantities) se duoc cap nhat rieng qua ProductInfoController
         Product updatedProduct = productService.updateProduct(product);
-        System.out.println("✅ Product updated successfully");
+        log.info("San pham ID {} duoc cap nhat thanh cong", id);
         return new ApiResponse<>(SuccessCode.PRODUCT_UPDATED, updatedProduct);
     }
 
     @GetMapping
     public ApiResponse<List<Product>> getAllProducts() {
-        return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, productService.findAll());
+        log.info("Lay danh sach tat ca san pham");
+        List<Product> products = productService.findAll();
+        log.info("Lay danh sach san pham thanh cong, so luong: {}", products.size());
+        return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, products);
     }
 
     @GetMapping("/test")
@@ -183,16 +182,23 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ApiResponse<Product> getProductById(@PathVariable("id") int id) {
-        return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, productService.findById(id));
+        log.info("Lay san pham theo ID: {}", id);
+        Product product = productService.findById(id);
+        log.info("Lay san pham thanh cong");
+        return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, product);
     }
 
     @GetMapping("/type/{typeId}")
     public ApiResponse<List<Product>> getProductsByTypeId(@PathVariable("typeId") int typeId) {
-        return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, productService.findByTypeId(typeId));
+        log.info("Lay san pham theo loai typeId: {}", typeId);
+        List<Product> products = productService.findByTypeId(typeId);
+        log.info("Lay danh sach san pham theo loai thanh cong, so luong: {}", products.size());
+        return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, products);
     }
 
     @PostMapping
     public ApiResponse<Product> createProduct(@RequestBody ProductCreateRequest request) {
+        log.info("Tao san pham moi: {}", request.getName());
         Product product = new Product();
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -221,12 +227,13 @@ public class ProductController {
         }
 
         Product createdProduct = productService.createProduct(product);
+        log.info("Tao san pham thanh cong, ID: {}", createdProduct.getId());
         return new ApiResponse<>(SuccessCode.PRODUCT_CREATED, createdProduct);
     }
 
     @PutMapping("/{id}")
     public ApiResponse<Product> updateProduct(@PathVariable("id") int id, @RequestBody ProductUpdateRequest request) {
-
+        log.info("Cap nhat san pham ID: {}", id);
         try {
             Product product = new Product();
             product.setId(id);
@@ -244,18 +251,16 @@ public class ProductController {
             }
 
             if (request.getProductInfos() != null && !request.getProductInfos().isEmpty()) {
-                request.getProductInfos().forEach(info -> info.setProduct(product)); // quan trọng để cascade lưu
+                request.getProductInfos().forEach(info -> info.setProduct(product)); // quan trong de cascade luu
                 product.setProductInfos(request.getProductInfos());
             }
 
-            System.out.println("Product entity prepared: " + product.getName());
-
+            log.info("Chuan bi entity san pham: {}", product.getName());
             Product updatedProduct = productService.updateProduct(product);
-            System.out.println("Product updated successfully");
+            log.info("San pham duoc cap nhat thanh cong");
             return new ApiResponse<>(SuccessCode.PRODUCT_UPDATED, updatedProduct);
         } catch (Exception e) {
-            System.err.println("Error updating product: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Loi cap nhat san pham ID {}: {}", id, e.getMessage());
             throw e;
         }
     }
@@ -263,19 +268,25 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     public ApiResponse<Integer> deleteProduct(@PathVariable("id") int id) {
+        log.info("Xoa san pham ID: {}", id);
         productService.deleteProduct(id);
+        log.info("Xoa san pham thanh cong");
         return new ApiResponse<>(SuccessCode.PRODUCT_DELETED, id);
     }
 
     @GetMapping("/search")
     public ApiResponse<List<Product>> searchProducts(@RequestParam(value = "q", required = false) String keyword) {
+        log.info("Tim kiem san pham voi tu khoa: {}", keyword);
         List<Product> products = productService.searchProducts(keyword);
+        log.info("Tim kiem san pham thanh cong, so luong: {}", products.size());
         return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, products);
     }
 
     @GetMapping("/{id}/stocks")
     public ApiResponse<List<Object>> getProductStocks(@PathVariable("id") int id) {
+        log.info("Lay danh sach kho hang cua san pham ID: {}", id);
         List<Object> stockItems = productService.getProductStocks(id);
+        log.info("Lay danh sach kho hang thanh cong, so luong: {}", stockItems.size());
         return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, stockItems);
     }
 
@@ -289,7 +300,9 @@ public class ProductController {
      */
     @PostMapping("/filter")
     public ApiResponse<List<Product>> filterProducts(@RequestBody ProductFilterRequest filterRequest) {
+        log.info("Loc san pham voi dieu kien loc");
         List<Product> filteredProducts = productService.filterProducts(filterRequest);
+        log.info("Loc san pham thanh cong, so luong: {}", filteredProducts.size());
         return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, filteredProducts);
     }
 
@@ -305,6 +318,8 @@ public class ProductController {
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) String sortBy
     ) {
+        log.info("Loc san pham voi tham so: typeId={}, typeName={}, minPrice={}, maxPrice={}, sortBy={}", 
+                 productTypeId, productTypeName, minPrice, maxPrice, sortBy);
         ProductFilterRequest filterRequest = new ProductFilterRequest();
         filterRequest.setProductTypeId(productTypeId);
         filterRequest.setProductTypeName(productTypeName);
@@ -313,6 +328,7 @@ public class ProductController {
         filterRequest.setSortBy(sortBy);
 
         List<Product> filteredProducts = productService.filterProducts(filterRequest);
+        log.info("Loc san pham thanh cong, so luong: {}", filteredProducts.size());
         return new ApiResponse<>(SuccessCode.FETCH_SUCCESS, filteredProducts);
     }
 }

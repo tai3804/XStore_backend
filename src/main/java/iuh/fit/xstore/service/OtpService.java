@@ -47,7 +47,7 @@ public class OtpService {
         
         // In production, would send via SMS provider (Twilio, AWS SNS, etc.)
         // For now, log it for demo purposes
-        System.out.println("📱 OTP for " + phoneNumber + ": " + otp);
+        System.out.println("OTP for " + phoneNumber + ": " + otp);
         
         return otp;
     }

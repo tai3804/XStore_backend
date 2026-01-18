@@ -11,6 +11,7 @@ import iuh.fit.xstore.model.StockItem;
 import iuh.fit.xstore.repository.ProductInfoRepository;
 import iuh.fit.xstore.repository.StockItemRepository;
 import iuh.fit.xstore.repository.StockRepository;
+import iuh.fit.xstore.repository.OrderItemRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class StockService {
     private final StockItemRepository stockItemRepo;
     private final ProductInfoRepository productInfoRepo;
     private final AddressRepository addressRepo;
+    private final OrderItemRepository orderItemRepo;
 
     //Stock
     public List<Stock> findAll() {
@@ -38,6 +40,11 @@ public class StockService {
     }
 
     public Stock create(Stock stock) {
+        // Persist address explicitly because Stock has no cascade on address
+        if (stock.getAddress() != null) {
+            Address savedAddress = addressRepo.save(stock.getAddress());
+            stock.setAddress(savedAddress);
+        }
         return stockRepo.save(stock);
     }
 
@@ -70,10 +77,26 @@ public class StockService {
     }
     public int delete(int id) {
         Stock s = findById(id);
+        
         try {
+            // Set stock_id = NULL trong tất cả order_items liên quan đến stock này
+            // Điều này tránh lỗi FK constraint khi xóa stock
+            orderItemRepo.nullifyStockForOrderItems(id);
+            
+            // Xóa toàn bộ stock items
+            List<StockItem> items = stockItemRepo.findByStock_Id(id);
+            if (!items.isEmpty()) {
+                stockItemRepo.deleteAll(items);
+            }
+
+            // Xóa stock
             stockRepo.delete(s);
+
+            // Dọn địa chỉ nếu có
+            if (s.getAddress() != null) {
+                addressRepo.delete(s.getAddress());
+            }
         } catch (DataIntegrityViolationException ex) {
-            // nếu còn hàng trong kho thì ko đc xóa kho
             throw new AppException(ErrorCode.STOCK_DELETE_FAILED);
         }
         return id;

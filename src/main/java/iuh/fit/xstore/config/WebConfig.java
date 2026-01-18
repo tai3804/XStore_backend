@@ -5,8 +5,8 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * ✅ Config để serve static files từ /uploads directory
- * Frontend có thể access ảnh via: http://localhost:8080/uploads/products/productImage_UUID.jpg
+ * Config de serve static files tu /uploads directory
+ * Frontend co the access anh via: http://localhost:8080/uploads/products/productImage_UUID.jpg
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {

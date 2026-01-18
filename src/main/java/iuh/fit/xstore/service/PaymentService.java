@@ -35,7 +35,7 @@ public class PaymentService {
      * Xử lý checkout và tạo đơn hàng
      */
     public Order processCheckout(CheckoutRequest request) {
-        log.info("🔵 Processing checkout for user: {}", request.getUserId());
+        log.info("Processing checkout for user: {}", request.getUserId());
 
         // 0. Validate request
         if (request == null || request.getUserId() <= 0 || request.getCartId() <= 0) {
@@ -81,7 +81,7 @@ public class PaymentService {
 
         for (CartItem cartItem : cart.getCartItems()) {
             if (cartItem == null || cartItem.getProduct() == null) {
-                log.warn("⚠️ Found null cart item, skipping");
+                log.warn("Found null cart item, skipping");
                 continue;
             }
 
@@ -96,7 +96,7 @@ public class PaymentService {
             }
             
             if (stockItem == null || stockItem.getQuantity() < cartItem.getQuantity()) {
-                log.error("❌ Insufficient stock for product variant: {} (Available: {}, Requested: {})", 
+                log.error("Insufficient stock for product variant: {} (Available: {}, Requested: {})", 
                         product.getId(), stockItem != null ? stockItem.getQuantity() : 0, cartItem.getQuantity());
                 throw new AppException(ErrorCode.INSUFFICIENT_STOCK);
             }
@@ -122,13 +122,13 @@ public class PaymentService {
             if (stockItem != null) {
                 stockItem.setQuantity(stockItem.getQuantity() - cartItem.getQuantity());
                 stockItemRepo.save(stockItem);
-                log.debug("📦 Stock updated for variant {}: -{}", 
+                log.debug("Stock updated for variant {}: -{}", 
                         stockItem.getId(), cartItem.getQuantity());
             } else {
                 // Fallback: trừ từ product stock
                 product.setPriceInStock(product.getPriceInStock() - cartItem.getQuantity());
                 productRepo.save(product);
-                log.debug("📦 Fallback stock updated for product {}: -{}", 
+                log.debug("Fallback stock updated for product {}: -{}", 
                         product.getId(), cartItem.getQuantity());
             }
         }
@@ -157,7 +157,7 @@ public class PaymentService {
                     
                     // Kiểm tra discount có hợp lệ không với user hiện tại
                     if (!discount.isValidForUser(user)) {
-                        log.warn("⚠️ Discount code {} is invalid, expired, or not applicable for user type: {}", discountId, discount.getId());
+                        log.warn("Discount code {} is invalid, expired, or not applicable for user type: {}", discountId, discount.getId());
                         continue; // Bỏ qua discount không hợp lệ
                     }
                     
@@ -165,7 +165,7 @@ public class PaymentService {
                     if (!"PRODUCT".equals(discount.getCategory()) && !"SHIPPING".equals(discount.getCategory())) {
                         // Nếu category null hoặc khác, mặc định coi là PRODUCT
                         if (discount.getCategory() != null && !"PRODUCT".equals(discount.getCategory())) {
-                            log.warn("⚠️ Discount {} is for {}, skipping for product discount", discountId, discount.getCategory());
+                            log.warn("Discount {} is for {}, skipping for product discount", discountId, discount.getCategory());
                             continue;
                         }
                     }
@@ -182,10 +182,10 @@ public class PaymentService {
                     discount.setUsageCount(discount.getUsageCount() + 1);
                     discountRepo.save(discount);
                     
-                    log.info("✅ Applied discount: {} (Amount: {}₫)", discount.getName(), currentDiscount);
+                    log.info("Applied discount: {} (Amount: {}₫)", discount.getName(), currentDiscount);
                     
                 } catch (Exception e) {
-                    log.warn("⚠️ Error processing discount {}: {}", discountId, e.getMessage());
+                    log.warn("Error processing discount {}: {}", discountId, e.getMessage());
                     // Tiếp tục với discount tiếp theo
                 }
             }
@@ -193,7 +193,7 @@ public class PaymentService {
             // Đảm bảo tổng giảm giá không vượt quá subtotal
             discountAmount = Math.min(discountAmount, subtotal);
             
-            log.info("✅ Total discount applied from {} codes: {}₫", validDiscountIds.size(), discountAmount);
+            log.info("Total discount applied from {} codes: {}₫", validDiscountIds.size(), discountAmount);
         }
 
         // 6. Tính phí vận chuyển
@@ -209,7 +209,7 @@ public class PaymentService {
 
             // Kiểm tra discount có hợp lệ không
             if (!shippingDiscount.isValidForUser(user)) {
-                log.warn("⚠️ Shipping discount is invalid for user: {}", shippingDiscount.getId());
+                log.warn("Shipping discount is invalid for user: {}", shippingDiscount.getId());
                 throw new AppException(ErrorCode.INVALID_DISCOUNT);
             }
 
@@ -231,7 +231,7 @@ public class PaymentService {
             // Tăng số lần sử dụng
             shippingDiscount.setUsageCount(shippingDiscount.getUsageCount() + 1);
             discountRepo.save(shippingDiscount);
-            log.info("✅ Shipping discount applied: {} (Amount: {}₫)", shippingDiscount.getId(), shippingDiscountAmount);
+            log.info("Shipping discount applied: {} (Amount: {}₫)", shippingDiscount.getId(), shippingDiscountAmount);
         }
 
         // 7. Tính tổng tiền
@@ -247,14 +247,14 @@ public class PaymentService {
 
         // 8. Lưu đơn hàng
         Order savedOrder = orderRepo.save(order);
-        log.info("✅ Order created successfully: Order #{} | Subtotal: {}₫ | Discount: {}₫ | Shipping: {}₫ | Total: {}₫", 
+        log.info("Order created successfully: Order #{} | Subtotal: {}₫ | Discount: {}₫ | Shipping: {}₫ | Total: {}₫", 
                 savedOrder.getId(), subtotal, discountAmount, shippingFee, total);
 
         // 9. Cập nhật điểm và xếp hạng thành viên
         try {
             userService.updatePointsAndRank(user.getId(), total);
         } catch (Exception e) {
-            log.warn("⚠️ Failed to update user points and rank: {}", e.getMessage());
+            log.warn("Failed to update user points and rank: {}", e.getMessage());
             // Không throw exception để không ảnh hưởng đến quá trình tạo đơn hàng
         }
 
@@ -320,9 +320,9 @@ public class PaymentService {
             cart.getCartItems().clear();
             cartRepo.save(cart);
             
-            log.info("✅ Cart cleared successfully: {}", cartId);
+            log.info("Cart cleared successfully: {}", cartId);
         } catch (Exception e) {
-            log.error("❌ Error clearing cart {}: {}", cartId, e.getMessage());
+            log.error("Error clearing cart {}: {}", cartId, e.getMessage());
             // Không throw exception, chỉ log warning
         }
     }
@@ -333,37 +333,37 @@ public class PaymentService {
      */
     public boolean processPayment(Order order, String paymentMethod) {
         if (order == null) {
-            log.error("❌ Order is null");
+            log.error("Order is null");
             return false;
         }
 
         String method = (paymentMethod != null) ? paymentMethod.toUpperCase() : "CASH";
-        log.info("💳 Processing payment - Method: {}, Order: {}", method, order.getId());
+        log.info("Processing payment - Method: {}, Order: {}", method, order.getId());
 
         try {
             switch (method) {
                 case "VNPAY":
-                    log.info("💳 Processing VNPAY payment for order: {}", order.getId());
+                    log.info("Processing VNPAY payment for order: {}", order.getId());
                     return processVNPayPayment(order);
                 
                 case "CARD":
-                    log.warn("⚠️ CARD payment is not yet implemented");
+                    log.warn("CARD payment is not yet implemented");
                     return processCardPayment(order);
                 
                 case "MOMO":
-                    log.warn("⚠️ MOMO payment is not yet implemented");
+                    log.warn("MOMO payment is not yet implemented");
                     return processMomoPayment(order);
                 
                 case "ZALOPAY":
-                    log.warn("⚠️ ZALOPAY payment is not yet implemented");
+                    log.warn("ZALOPAY payment is not yet implemented");
                     return processZaloPayPayment(order);
                 
                 default:
-                    log.error("❌ Unknown payment method: {}", method);
+                    log.error("Unknown payment method: {}", method);
                     throw new AppException(ErrorCode.INVALID_REQUEST);
             }
         } catch (Exception e) {
-            log.error("❌ Error processing payment: {}", e.getMessage(), e);
+            log.error("Error processing payment: {}", e.getMessage(), e);
             order.setStatus(OrderStatus.PENDING);
             orderRepo.save(order);
             return false;
@@ -376,14 +376,14 @@ public class PaymentService {
      */
     private boolean processCashPayment(Order order) {
         try {
-            log.info("💵 Processing CASH payment for order: {}", order.getId());
+            log.info("Processing CASH payment for order: {}", order.getId());
             // Stock đã được trừ khi tạo order, chỉ cần cập nhật trạng thái
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepo.save(order);
-            log.info("✅ CASH payment confirmed for order: {}", order.getId());
+            log.info("CASH payment confirmed for order: {}", order.getId());
             return true;
         } catch (Exception e) {
-            log.error("❌ Error processing CASH payment: {}", e.getMessage());
+            log.error("Error processing CASH payment: {}", e.getMessage());
             return false;
         }
     }
@@ -394,12 +394,12 @@ public class PaymentService {
      */
     private boolean processVNPayPayment(Order order) {
         try {
-            log.info("💳 Processing VNPAY payment for order: {}", order.getId());
+            log.info("Processing VNPAY payment for order: {}", order.getId());
             // Đơn hàng đã ở trạng thái AWAITING_PAYMENT, chỉ cần log
-            log.info("✅ VNPAY payment initiated for order: {}", order.getId());
+            log.info("VNPAY payment initiated for order: {}", order.getId());
             return true;
         } catch (Exception e) {
-            log.error("❌ Error processing VNPAY payment: {}", e.getMessage());
+            log.error("Error processing VNPAY payment: {}", e.getMessage());
             return false;
         }
     }
@@ -410,14 +410,14 @@ public class PaymentService {
      */
     private boolean processCardPayment(Order order) {
         try {
-            log.info("💳 Processing CARD payment for order: {}", order.getId());
+            log.info("Processing CARD payment for order: {}", order.getId());
             // TODO: Integrate với payment gateway
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepo.save(order);
-            log.info("✅ CARD payment processed for order: {}", order.getId());
+            log.info("CARD payment processed for order: {}", order.getId());
             return true;
         } catch (Exception e) {
-            log.error("❌ Error processing CARD payment: {}", e.getMessage());
+            log.error("Error processing CARD payment: {}", e.getMessage());
             return false;
         }
     }
@@ -428,14 +428,14 @@ public class PaymentService {
      */
     private boolean processMomoPayment(Order order) {
         try {
-            log.info("📱 Processing MOMO payment for order: {}", order.getId());
+            log.info("Processing MOMO payment for order: {}", order.getId());
             // TODO: Integrate với MoMo payment gateway
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepo.save(order);
-            log.info("✅ MOMO payment processed for order: {}", order.getId());
+            log.info("MOMO payment processed for order: {}", order.getId());
             return true;
         } catch (Exception e) {
-            log.error("❌ Error processing MOMO payment: {}", e.getMessage());
+            log.error("Error processing MOMO payment: {}", e.getMessage());
             return false;
         }
     }
@@ -448,14 +448,14 @@ public class PaymentService {
     @Transactional
     public boolean confirmVNPayPayment(int orderId) {
         try {
-            log.info("💳 Confirming VNPAY payment for order: {}", orderId);
+            log.info("Confirming VNPAY payment for order: {}", orderId);
             
             Order order = orderRepo.findById(orderId)
                     .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
             
             // Kiểm tra trạng thái
             if (!order.getStatus().equals(OrderStatus.AWAITING_PAYMENT)) {
-                log.warn("⚠️ Order {} is not in AWAITING_PAYMENT status: {}", orderId, order.getStatus());
+                log.warn("Order {} is not in AWAITING_PAYMENT status: {}", orderId, order.getStatus());
                 return false;
             }
             
@@ -463,10 +463,10 @@ public class PaymentService {
             order.setStatus(OrderStatus.PENDING);
             orderRepo.save(order);
             
-            log.info("✅ VNPAY payment confirmed for order: {} - Status set to PENDING", orderId);
+            log.info("VNPAY payment confirmed for order: {} - Status set to PENDING", orderId);
             return true;
         } catch (Exception e) {
-            log.error("❌ Error confirming VNPAY payment for order {}: {}", orderId, e.getMessage());
+            log.error("Error confirming VNPAY payment for order {}: {}", orderId, e.getMessage());
             return false;
         }
     }
@@ -477,14 +477,14 @@ public class PaymentService {
      */
     private boolean processZaloPayPayment(Order order) {
         try {
-            log.info("📱 Processing ZALOPAY payment for order: {}", order.getId());
+            log.info("Processing ZALOPAY payment for order: {}", order.getId());
             // TODO: Integrate với ZaloPay payment gateway
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepo.save(order);
-            log.info("✅ ZALOPAY payment processed for order: {}", order.getId());
+            log.info("ZALOPAY payment processed for order: {}", order.getId());
             return true;
         } catch (Exception e) {
-            log.error("❌ Error processing ZALOPAY payment: {}", e.getMessage());
+            log.error("Error processing ZALOPAY payment: {}", e.getMessage());
             return false;
         }
     }
@@ -498,7 +498,7 @@ public class PaymentService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        log.info("📋 Fetching orders for user: {}", userId);
+        log.info("Fetching orders for user: {}", userId);
         
         // Nếu có method findByUser trong repository, sử dụng nó
         // return orderRepo.findByUser(user);
@@ -509,7 +509,7 @@ public class PaymentService {
                 .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
                 .toList();
 
-        log.info("✅ Found {} orders for user: {}", orders.size(), userId);
+        log.info("Found {} orders for user: {}", orders.size(), userId);
         return orders;
     }
 
@@ -521,7 +521,7 @@ public class PaymentService {
      */
     @Transactional
     public void cancelOrder(int orderId, String reason) {
-        log.info("🚨 Cancelling order: {}, Reason: {}", orderId, reason);
+        log.info("Cancelling order: {}, Reason: {}", orderId, reason);
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
@@ -530,7 +530,7 @@ public class PaymentService {
         if (!order.getStatus().equals(OrderStatus.PENDING) &&
             !order.getStatus().equals(OrderStatus.CONFIRMED) &&
             !order.getStatus().equals(OrderStatus.AWAITING_PAYMENT)) {
-            log.error("❌ Cannot cancel order {} with status: {}", orderId, order.getStatus());
+            log.error("Cannot cancel order {} with status: {}", orderId, order.getStatus());
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
@@ -538,7 +538,7 @@ public class PaymentService {
         if (order.getOrderItems() != null && !order.getOrderItems().isEmpty()) {
             for (OrderItem item : order.getOrderItems()) {
                 if (item == null || item.getProduct() == null) {
-                    log.warn("⚠️ Found null order item, skipping");
+                    log.warn("Found null order item, skipping");
                     continue;
                 }
 
@@ -562,14 +562,14 @@ public class PaymentService {
                 if (stockItem != null) {
                     stockItem.setQuantity(stockItem.getQuantity() + item.getQuantity());
                     stockItemRepo.save(stockItem);
-                    log.debug("📦 Stock restored for variant {}: +{}", 
+                    log.debug("Stock restored for variant {}: +{}", 
                             stockItem.getId(), item.getQuantity());
                 } else {
                     // Fallback: hoàn lại product stock
                     Product product = item.getProduct();
                     product.setPriceInStock(product.getPriceInStock() + item.getQuantity());
                     productRepo.save(product);
-                    log.debug("📦 Fallback stock restored for product {}: +{}", 
+                    log.debug("Fallback stock restored for product {}: +{}", 
                             product.getId(), item.getQuantity());
                 }
             }
@@ -579,6 +579,6 @@ public class PaymentService {
         order.setStatus(OrderStatus.CANCELLED);
         orderRepo.save(order);
 
-        log.info("✅ Order cancelled successfully: {}", orderId);
+        log.info("Order cancelled successfully: {}", orderId);
     }
 }

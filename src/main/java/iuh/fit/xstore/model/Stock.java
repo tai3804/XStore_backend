@@ -24,7 +24,7 @@ public class Stock implements Serializable {
     private String phone;
     private String email;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_id")
     private Address address;
 

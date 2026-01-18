@@ -3,11 +3,16 @@ package iuh.fit.xstore.config;
 import iuh.fit.xstore.model.*;
 import iuh.fit.xstore.repository.AccountRepository;
 import iuh.fit.xstore.repository.UserRepository;
+import iuh.fit.xstore.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
+import javax.sql.DataSource;
+import java.sql.Connection;
 
 @Slf4j
 @Configuration
@@ -172,9 +177,28 @@ public class DataInitializer {
                         .build();
 
                 userRepo.save(customerUser);
-                log.info("Default customer user created: username=hien, password=hien");
+                log.info("Default customer user created: username=tai, password=tai");
             }
 
+        };
+    }
+
+    // Chay data.sql chi lan dau tien khi database duoc tao
+    @Bean
+    CommandLineRunner initializeData(DataSource dataSource, ProductRepository productRepo) {
+        return args -> {
+            // Kiểm tra xem dữ liệu đã được tải chưa bằng cách kiểm tra products table
+            if (productRepo.count() == 0) {
+                try (Connection connection = dataSource.getConnection()) {
+                    log.info("Database is empty. Running data.sql...");
+                    ScriptUtils.executeSqlScript(connection, new ClassPathResource("data.sql"));
+                    log.info("data.sql executed successfully!");
+                } catch (Exception e) {
+                    log.error("Error executing data.sql: {}", e.getMessage());
+                }
+            } else {
+                log.info("Database already has data. Skipping data.sql initialization.");
+            }
         };
 
 

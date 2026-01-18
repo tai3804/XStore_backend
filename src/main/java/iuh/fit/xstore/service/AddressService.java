@@ -40,7 +40,7 @@ public class AddressService {
      * Lấy tất cả địa chỉ của một user
      */
     public List<Address> findByUserId(int userId) {
-        log.info("📍 Fetching addresses for user: {}", userId);
+        log.info("Fetching addresses for user: {}", userId);
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         
@@ -53,7 +53,7 @@ public class AddressService {
      * Tạo địa chỉ mới cho user
      */
     public Address createAddressForUser(Address address, int userId) {
-        log.info("📍 Creating address for user: {}", userId);
+        log.info("Creating address for user: {}", userId);
         
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -63,7 +63,7 @@ public class AddressService {
         // vì chưa có relationship để query addresses của user
 
         Address savedAddress = addressRepo.save(address);
-        log.info("✅ Address created: {}", savedAddress.getId());
+        log.info("Address created: {}", savedAddress.getId());
         
         return savedAddress;
     }
@@ -106,7 +106,7 @@ public class AddressService {
     public int deleteAddress(int id) {
         findById(id);
         addressRepo.deleteById(id);
-        log.info("✅ Address deleted: {}", id);
+        log.info("Address deleted: {}", id);
         return id;
     }
 
@@ -114,7 +114,7 @@ public class AddressService {
      * Đặt địa chỉ làm mặc định cho user
      */
     public Address setDefaultAddress(int addressId, int userId) {
-        log.info("📍 Setting default address {} for user {}", addressId, userId);
+        log.info("Setting default address {} for user {}", addressId, userId);
         
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -124,11 +124,11 @@ public class AddressService {
         // Reset tất cả địa chỉ của user
         // TODO: Implement khi có relationship User -> List<Address>
 
-        // Set địa chỉ này là mặc định
+        // Set dia chi nay la mac dinh
         address.setDefault(true);
         Address saved = addressRepo.save(address);
         
-        log.info("✅ Default address set: {}", addressId);
+        log.info("Default address set: {}", addressId);
         return saved;
     }
 }

@@ -193,7 +193,7 @@ public class UserService {
 
         // Nếu đã là PLATINUM thì không tích điểm nữa
         if (user.getUserType() == UserType.PLATINUM) {
-            log.info("✨ User {} is already PLATINUM, no points added", userId);
+            log.info("User {} is already PLATINUM, no points added", userId);
             return;
         }
 
@@ -211,7 +211,7 @@ public class UserService {
         user.setUserType(newRank);
         userRepo.save(user);
 
-        log.info("🎯 User {} earned {} points (Total: {} points) | Rank: {} -> {}", 
+        log.info("User {} earned {} points (Total: {} points) | Rank: {} -> {}", 
                 userId, pointsToAdd, newPoints, oldRank, newRank);
     }
 

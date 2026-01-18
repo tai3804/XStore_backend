@@ -69,10 +69,11 @@ public class AuthController {
         this.cartRepository = cartRepository;
     }
 
-    // (Giữ nguyên /login)
+    // (Giu nguyen /login)
     @PostMapping("/login")
     public ApiResponse<?> login(@RequestBody LoginRequest request) {
         try {
+            log.info("Dang nhap voi username: {}", request.getUsername());
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(),
@@ -83,6 +84,7 @@ public class AuthController {
             UserDetail userDetail = (UserDetail) authentication.getPrincipal();
             String token = jwtUtil.generateToken(userDetail);
             User user = userRepository.getByAccountUsername(request.getUsername());
+            log.info("Dang nhap thanh cong, user: {}", request.getUsername());
             var username = SecurityContextHolder.getContext().getAuthentication();
             log.warn("return: ", username);
             Map<String, Object> data = new HashMap<>();
@@ -90,19 +92,24 @@ public class AuthController {
             data.put("user", user);
             return new ApiResponse<>(SuccessCode.LOGIN_SUCCESSFULLY, data);
         } catch (UsernameNotFoundException e) {
+            log.error("User khong tim thay: {}", e.getMessage());
             return new ApiResponse<>(ErrorCode.USER_NOT_FOUND);
         } catch (BadCredentialsException e) {
+            log.error("Ten dang nhap hoac mat khau khong chinh xac");
             return new ApiResponse<>(ErrorCode.INCORRECT_USERNAME_OR_PASSWORD);
         } catch (Exception e) {
+            log.error("Loi dang nhap: {}", e.getMessage());
             e.printStackTrace();
             return new ApiResponse<>(ErrorCode.UNKNOWN_ERROR);
         }
     }
 
-    // (Giữ nguyên /register)
+    // (Giu nguyen /register)
     @PostMapping("/register")
     public ApiResponse<?> register(@RequestBody RegisterRequest request) {
+        log.info("Dang ky user moi: {}", request.getUsername());
         if (userRepository.existsByAccountUsername(request.getUsername())) {
+            log.warn("User {} da ton tai", request.getUsername());
             return new ApiResponse<>(ErrorCode.USER_EXISTED);
         }
         User user = User.builder()
@@ -126,24 +133,29 @@ public class AuthController {
         return new ApiResponse<>(SuccessCode.REGISTER_SUCCESSFULLY, user);
     }
 
-    // ================= RESET PASSWORD (ĐÃ SỬA THÔNG MINH HƠN) =================
+    // ================= RESET PASSWORD (DA SUA THONG MINH HON) =================
     @PostMapping("/reset-password")
     public ApiResponse<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-
-        // DTO request.getUsername() bây giờ có thể là EMAIL hoặc SĐT
+        log.info("Dat lai mat khau cho: {}", request.getUsername());
+        // DTO request.getUsername() bay gio co the la EMAIL hoac SDT
         String contact = request.getUsername();
 
         User user = userRepository.findByEmail(contact)
-                .or(() -> userRepository.findByPhone(contact)) // Thử tìm SĐT
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .or(() -> userRepository.findByPhone(contact)) // Thu tim SDT
+                .orElseThrow(() -> {
+                    log.error("Khong tim thay user voi contact: {}", contact);
+                    return new AppException(ErrorCode.USER_NOT_FOUND);
+                });
 
         Account account = user.getAccount();
         if (account == null) {
+            log.error("Khong tim thay account cho user: {}", contact);
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
         }
 
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
+        log.info("Dat lai mat khau thanh cong cho: {}", contact);
 
         return new ApiResponse<>(SuccessCode.RESET_PASSWORD_SUCCESSFULLY, user);
     }
@@ -152,7 +164,9 @@ public class AuthController {
     @PostMapping("/send-otp")
     public ApiResponse<?> sendOtp(@RequestBody SendOtpRequest request) {
         try {
+            log.info("Gui OTP den: {}", request.getPhoneNumber());
             if (request.getPhoneNumber() == null || request.getPhoneNumber().trim().isEmpty()) {
+                log.warn("So dien thoai khong hop le");
                 return new ApiResponse<>(ErrorCode.INVALID_INPUT);
             }
 
@@ -162,13 +176,13 @@ public class AuthController {
             data.put("message", "OTP sent successfully to " + request.getPhoneNumber());
             data.put("expiryMinutes", 5);
 
-            log.info("OTP sent to phone: {}", request.getPhoneNumber());
+            log.info("Gui OTP thanh cong den: {}", request.getPhoneNumber());
             return new ApiResponse<>(SuccessCode.OTP_SEND_SUCCESSFULLY, data);
         } catch (IllegalArgumentException e) {
-            log.error("Invalid phone format: {}", e.getMessage());
+            log.error("Dinh dang so dien thoai khong hop le: {}", e.getMessage());
             return new ApiResponse<>(ErrorCode.INVALID_INPUT);
         } catch (Exception e) {
-            log.error("Error sending OTP: {}", e.getMessage());
+            log.error("Loi khi gui OTP: {}", e.getMessage());
             return new ApiResponse<>(ErrorCode.UNKNOWN_ERROR);
         }
     }
@@ -176,10 +190,13 @@ public class AuthController {
     @PostMapping("/verify-otp")
     public ApiResponse<?> verifyOtp(@RequestBody VerifyOtpRequest request) {
         try {
+            log.info("Kiem tra OTP cho: {}", request.getPhoneNumber());
             if (request.getPhoneNumber() == null || request.getPhoneNumber().trim().isEmpty()) {
+                log.warn("So dien thoai khong hop le");
                 return new ApiResponse<>(ErrorCode.INVALID_INPUT);
             }
             if (request.getOtp() == null || request.getOtp().trim().isEmpty()) {
+                log.warn("OTP khong hop le");
                 return new ApiResponse<>(ErrorCode.INVALID_INPUT);
             }
 
@@ -187,12 +204,13 @@ public class AuthController {
             boolean isValid = otpService.verifyOtp(request.getPhoneNumber(), request.getOtp().trim());
             
             if (!isValid) {
+                log.warn("OTP khong hop le hoac het han cho: {}", request.getPhoneNumber());
                 return new ApiResponse<>(ErrorCode.OTP_INVALID_OR_EXPIRATION);
             }
 
             // OTP verified - update user's phone and verification status
             // This is done when user is logged in and updates their account
-            log.info("OTP verified successfully for phone: {}", request.getPhoneNumber());
+            log.info("Kiem tra OTP thanh cong cho: {}", request.getPhoneNumber());
             
             Map<String, Object> data = new HashMap<>();
             data.put("message", "Phone verified successfully");
@@ -208,8 +226,10 @@ public class AuthController {
     @PostMapping("/google-login")
     public ApiResponse<?> googleLogin(@RequestBody Map<String, String> request) {
         try {
+            log.info("Dang nhap Google");
             String token = request.get("token");
             if (token == null || token.trim().isEmpty()) {
+                log.warn("Token Google khong hop le");
                 return new ApiResponse<>(ErrorCode.INVALID_INPUT);
             }
 
@@ -222,6 +242,7 @@ public class AuthController {
                 GoogleIdToken.Payload payload = idToken.getPayload();
                 String email = payload.getEmail();
                 String name = (String) payload.get("name");
+                log.info("Dang nhap Google thanh cong, email: {}", email);
 
                 // Split name into first and last
                 String[] names = name.split(" ", 2);
@@ -266,10 +287,11 @@ public class AuthController {
                 data.put("user", user);
                 return new ApiResponse<>(SuccessCode.LOGIN_SUCCESSFULLY, data);
             } else {
+                log.error("Token Google khong hop le hoac het han");
                 return new ApiResponse<>(ErrorCode.INVALID_TOKEN);
             }
         } catch (Exception e) {
-            log.error("Error during Google login: {}", e.getMessage());
+            log.error("Loi dang nhap Google: {}", e.getMessage());
             return new ApiResponse<>(ErrorCode.UNKNOWN_ERROR);
         }
     }

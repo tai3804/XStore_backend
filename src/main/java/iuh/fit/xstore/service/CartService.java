@@ -19,18 +19,18 @@ public class CartService {
     @Autowired
     private UserRepository userRepository;
 
-    // ✅ Lấy tất cả giỏ hàng
+    // Lay tat ca gio hang
     public List<Cart> getAllCarts() {
         return cartRepository.findAll();
     }
 
-    // ✅ Lấy giỏ hàng theo ID
+    // Lay gio hang theo ID
     public Cart getCartById(Integer cartId) {
         return cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart không tồn tại với ID: " + cartId));
     }
 
-    // ✅ Tạo giỏ hàng mới và gán cho user
+    // Tao gio hang moi va gan cho user
     @Transactional
     public Cart createCartForUser(Integer userId) {
         User user = userRepository.findById(userId)
@@ -50,7 +50,7 @@ public class CartService {
         return cart;
     }
 
-    // ✅ Lấy giỏ hàng của user
+    // Lay gio hang cua user
     public Cart getCartByUserId(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
@@ -62,7 +62,7 @@ public class CartService {
         return user.getCart();
     }
 
-    // ✅ Xóa giỏ hàng
+    // Xoa gio hang
     @Transactional
     public void deleteCart(Integer cartId) {
         Cart cart = cartRepository.findById(cartId)

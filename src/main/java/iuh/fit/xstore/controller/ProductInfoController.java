@@ -4,6 +4,7 @@ import iuh.fit.xstore.dto.response.ApiResponse;
 import iuh.fit.xstore.model.ProductInfo;
 import iuh.fit.xstore.service.ProductInfoService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +22,7 @@ import java.util.UUID;
 /**
  * ProductInfoController - REST API cho ProductInfo
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/products")
 @AllArgsConstructor
@@ -28,11 +30,11 @@ public class ProductInfoController {
     
     private final ProductInfoService productInfoService;
 
-    // 📁 Thư mục lưu ảnh biến thể
+    // Thu muc luu anh bien the
     private static final String UPLOAD_DIR = "uploads/products/";
 
     /**
-     * ✅ Lưu file ảnh biến thể lên server
+     * Luu file anh bien the len server
      */
     private String saveProductInfoImage(MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) {
@@ -67,8 +69,9 @@ public class ProductInfoController {
     @GetMapping("/{productId}/info")
     public ResponseEntity<?> getProductInfoByProductId(@PathVariable("productId") int productId) {
         try {
+            log.info("Lay thong tin bien the san pham ID: {}", productId);
             List<ProductInfo> productInfoList = productInfoService.findByProductId(productId);
-            
+            log.info("Lay thong tin bien the san pham thanh cong, so luong: {}", productInfoList.size());
             ApiResponse<List<ProductInfo>> response = new ApiResponse<>(
                     200,
                     "Lấy thông tin biến thể sản phẩm thành công",
@@ -92,8 +95,9 @@ public class ProductInfoController {
     @GetMapping("/{productId}/colors")
     public ResponseEntity<?> getProductColors(@PathVariable("productId") int productId) {
         try {
+            log.info("Lay danh sach mau sac san pham ID: {}", productId);
             List<Map<String, String>> colors = productInfoService.getDistinctColors(productId);
-            
+            log.info("Lay danh sach mau sac thanh cong, so luong: {}", colors.size());
             ApiResponse<List<Map<String, String>>> response = new ApiResponse<>(
                     200,
                     "Lấy danh sách màu sắc thành công",
@@ -117,8 +121,9 @@ public class ProductInfoController {
     @GetMapping("/{productId}/sizes")
     public ResponseEntity<?> getProductSizes(@PathVariable("productId") int productId) {
         try {
+            log.info("Lay danh sach kich thuoc san pham ID: {}", productId);
             List<String> sizes = productInfoService.getDistinctSizes(productId);
-            
+            log.info("Lay danh sach kich thuoc thanh cong, so luong: {}", sizes.size());
             ApiResponse<List<String>> response = new ApiResponse<>(
                     200,
                     "Lấy danh sách kích thước thành công",
@@ -142,8 +147,9 @@ public class ProductInfoController {
     @GetMapping("/info/{id}")
     public ResponseEntity<?> getProductInfoById(@PathVariable("id") int id) {
         try {
+            log.info("Lay thong tin bien the theo ID: {}", id);
             ProductInfo productInfo = productInfoService.findById(id);
-            
+            log.info("Lay thong tin bien the thanh cong");
             ApiResponse<ProductInfo> response = new ApiResponse<>(
                     200,
                     "Lấy thông tin biến thể thành công",
@@ -173,11 +179,12 @@ public class ProductInfoController {
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
         try {
-            // 💾 Xử lý ảnh nếu có
+            log.info("Tao bien the san pham ID {}, color: {}, size: {}", productId, colorName, sizeName);
+            // Xu ly anh neu co
             String imagePath = null;
             if (image != null && !image.isEmpty()) {
                 imagePath = saveProductInfoImage(image);
-                System.out.println("✅ Variant image saved: " + imagePath);
+                log.info("Anh bien the san pham duoc luu: {}", imagePath);
             }
 
             // Tạo ProductInfo object
@@ -188,7 +195,7 @@ public class ProductInfoController {
             productInfo.setImage(imagePath);
 
             ProductInfo created = productInfoService.create(productId, productInfo);
-            
+            log.info("Tao bien the san pham thanh cong");
             ApiResponse<ProductInfo> response = new ApiResponse<>(
                     201,
                     "Tạo biến thể sản phẩm thành công",
@@ -218,6 +225,7 @@ public class ProductInfoController {
             @RequestParam(value = "images", required = false) List<MultipartFile> images
     ) {
         try {
+            log.info("Tao nhieu bien the san pham ID {}, so luong: {}", productId, colorNames.size());
             List<ProductInfo> productInfoList = new ArrayList<>();
             
             for (int i = 0; i < colorNames.size(); i++) {
@@ -236,7 +244,7 @@ public class ProductInfoController {
             }
 
             List<ProductInfo> created = productInfoService.saveAll(productId, productInfoList);
-            
+            log.info("Tao nhieu bien the san pham thanh cong, so luong: {}", created.size());
             ApiResponse<List<ProductInfo>> response = new ApiResponse<>(
                     201,
                     "Tạo biến thể sản phẩm thành công",
@@ -266,16 +274,17 @@ public class ProductInfoController {
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
         try {
-            // 💾 Xử lý ảnh: nếu có file mới, lưu file mới; nếu không, giữ ảnh cũ
+            log.info("Cap nhat bien the san pham ID: {}", id);
+            // Xu ly anh: neu co file moi, luu file moi; neu khong, giu anh cu
             String imagePath = null;
             if (image != null && !image.isEmpty()) {
                 imagePath = saveProductInfoImage(image);
-                System.out.println("✅ New variant image saved: " + imagePath);
+                log.info("Anh bien the san pham moi duoc luu: {}", imagePath);
             } else {
-                // Giữ ảnh cũ: fetch product info cũ từ DB
+                // Giu anh cu: fetch product info cu tu DB
                 ProductInfo existingInfo = productInfoService.findById(id);
                 imagePath = existingInfo.getImage();
-                System.out.println("ℹ️ Keeping old variant image: " + imagePath);
+                log.info("Giu anh cu cua bien the san pham");
             }
 
             // Tạo ProductInfo object với dữ liệu mới
@@ -286,7 +295,7 @@ public class ProductInfoController {
             productInfo.setImage(imagePath);
 
             ProductInfo updated = productInfoService.update(id, productInfo);
-            
+            log.info("Cap nhat bien the san pham thanh cong");
             ApiResponse<ProductInfo> response = new ApiResponse<>(
                     200,
                     "Cập nhật biến thể sản phẩm thành công",
@@ -310,7 +319,9 @@ public class ProductInfoController {
     @DeleteMapping("/info/{id}")
     public ResponseEntity<?> deleteProductInfo(@PathVariable("id") int id) {
         try {
+            log.info("Xoa bien the san pham ID: {}", id);
             productInfoService.delete(id);
+            log.info("Xoa bien the san pham thanh cong");
             
             ApiResponse<Void> response = new ApiResponse<>(
                     200,
@@ -335,7 +346,9 @@ public class ProductInfoController {
     @DeleteMapping("/{productId}/info")
     public ResponseEntity<?> deleteAllProductInfo(@PathVariable("productId") int productId) {
         try {
+            log.info("Xoa tat ca bien the san pham ID: {}", productId);
             productInfoService.deleteByProductId(productId);
+            log.info("Xoa tat ca bien the san pham thanh cong");
             
             ApiResponse<Void> response = new ApiResponse<>(
                     200,

@@ -40,7 +40,7 @@ public class ShipInfoService {
      * Lấy tất cả ship info của một user
      */
     public List<ShipInfo> findByUserId(int userId) {
-        log.info("📦 Fetching ship infos for user: {}", userId);
+        log.info("Fetching ship infos for user: {}", userId);
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         
@@ -51,7 +51,7 @@ public class ShipInfoService {
      * Lấy ship info mặc định của user
      */
     public ShipInfo findDefaultByUserId(int userId) {
-        log.info("📦 Fetching default ship info for user: {}", userId);
+        log.info("Fetching default ship info for user: {}", userId);
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         
@@ -80,7 +80,7 @@ public class ShipInfoService {
         }
 
         ShipInfo savedShipInfo = shipInfoRepo.save(shipInfo);
-        log.info("✅ Ship info created: {}", savedShipInfo.getId());
+        log.info("Ship info created: {}", savedShipInfo.getId());
         
         return savedShipInfo;
     }
@@ -129,7 +129,7 @@ public class ShipInfoService {
     public int deleteShipInfo(int id) {
         findById(id);
         shipInfoRepo.deleteById(id);
-        log.info("✅ Ship info deleted: {}", id);
+        log.info("Ship info deleted: {}", id);
         return id;
     }
 
@@ -137,7 +137,7 @@ public class ShipInfoService {
      * Đặt ship info làm mặc định cho user
      */
     public ShipInfo setDefaultShipInfo(int shipInfoId, int userId) {
-        log.info("📦 Setting default ship info {} for user {}", shipInfoId, userId);
+        log.info("Setting default ship info {} for user {}", shipInfoId, userId);
         
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -155,7 +155,7 @@ public class ShipInfoService {
         shipInfo.setDefault(true);
         ShipInfo saved = shipInfoRepo.save(shipInfo);
         
-        log.info("✅ Default ship info set: {}", shipInfoId);
+        log.info("Default ship info set: {}", shipInfoId);
         return saved;
     }
 }

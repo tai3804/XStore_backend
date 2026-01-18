@@ -52,12 +52,12 @@ public class ProductService {
     
     @Transactional
     public Product createProduct(Product product) {
-        System.out.println("🔧 Creating product: " + product.getName());
+        System.out.println("Creating product: " + product.getName());
         System.out.println("   ProductInfos: " + (product.getProductInfos() != null ? product.getProductInfos().size() : 0));
         
         // Lưu product (cascade sẽ tự động lưu productInfos)
         Product savedProduct = productRepository.save(product);
-        System.out.println("✅ Product saved with ID: " + savedProduct.getId());
+        System.out.println("Product saved with ID: " + savedProduct.getId());
         
         return savedProduct;
     }

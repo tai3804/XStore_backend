@@ -65,8 +65,9 @@ public enum ErrorCode {
 //    === Stock ===
     STOCK_NOT_FOUND(404, "Stock not found"),
     STOCK_ITEM_NOT_FOUND(404, "Stock item not found"),
-    NOT_ENOUGH_QUANTITY(409, "Not enough quantity"),
     STOCK_DELETE_FAILED(409, "Cannot delete stock while items remain"),
+    STOCK_IN_USE(409, "Cannot delete stock - it is being used in orders"),
+    NOT_ENOUGH_QUANTITY(409, "Not enough quantity"),
 
     //cart
     CART_NOT_FOUND(404, "Cart not found"),
